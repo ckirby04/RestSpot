@@ -1,0 +1,16 @@
+{
+  "name": "@restspot/osm-import",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "import": "node src/main.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@restspot/shared": "^0.0.0"
+  },
+  "devDependencies": {
+    "vitest": "^5.0.5"
+  }
+}

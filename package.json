@@ -4,7 +4,8 @@
   "workspaces": [
     "apps/*",
     "packages/*",
-    "supabase"
+    "supabase",
+    "tools/*"
   ],
   "scripts": {
     "dev": "npm run dev -w @restspot/web",

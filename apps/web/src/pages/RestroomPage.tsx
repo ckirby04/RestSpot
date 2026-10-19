@@ -276,6 +276,12 @@ function RestroomInfo({ restroom }: { restroom: RestroomDetail }) {
     <>
       <section aria-labelledby="rooms-h" className="detail-section">
         <h2 id="rooms-h">Rooms</h2>
+        {restroom.rooms.length === 0 && (
+          <p className="muted">
+            Nobody has added room details yet (men’s, women’s, all-gender, accessibility, changing tables). If you’ve
+            been here, <Link to={`/restroom/${restroom.id}/edit`}>add them</Link>.
+          </p>
+        )}
         <ul className="rooms">
           {restroom.rooms.map((room, i) => (
             <RoomRow key={room.id ?? i} room={room} />
