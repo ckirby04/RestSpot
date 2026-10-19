@@ -208,6 +208,23 @@ describe('reviews', () => {
     ).rejects.toThrow(/permission denied/)
   })
 
+  it('save_my_review creates then replaces the caller’s review', async () => {
+    const id = await save(alice)
+    await db.rpc(bob, 'save_my_review', { location_id: id, overall: 2, cleanliness: 3, comment: '  ', anonymous: false })
+    await db.rpc(bob, 'save_my_review', { location_id: id, overall: 5, cleanliness: 4, comment: 'Better now', anonymous: true })
+    const reviews = await db.rpc<Record<string, any>>(bob, 'get_location_reviews', { location_id: id })
+    expect(reviews).toHaveLength(1)
+    expect(reviews[0]).toMatchObject({ overall: 5, cleanliness: 4, comment: 'Better now', anonymous: true, is_mine: true })
+
+    await expect(
+      db.rpc(bob, 'save_my_review', { location_id: id, overall: 0, cleanliness: 4 }),
+    ).rejects.toThrow(/check constraint/)
+    await expect(db.rpc(ANON, 'save_my_review', { location_id: id, overall: 3, cleanliness: 3 })).rejects.toThrow()
+
+    await db.rpc(bob, 'delete_my_review', { location_id: id })
+    expect(await db.rpc(bob, 'get_location_reviews', { location_id: id })).toHaveLength(0)
+  })
+
   it('hides anonymous reviewers from everyone but admins', async () => {
     const id = await save(alice)
     await db.as(bob, (tx) =>
@@ -255,6 +272,25 @@ describe('reports and favorites', () => {
     expect((await db.as(alice, (tx) => tx.query(`select * from favorites`))).rows).toHaveLength(0)
     const [loc] = await db.rpc<{ get_location: any }>(bob, 'get_location', { location_id: id })
     expect(loc.get_location.is_favorite).toBe(true)
+
+    const favs = await db.rpc<{ get_favorites: any }>(bob, 'get_favorites')
+    expect(favs.map((f) => f.get_favorites.id)).toEqual([id])
+    expect(await db.rpc(alice, 'get_favorites')).toHaveLength(0)
+  })
+
+  it('lists my contributions', async () => {
+    const id = await save(alice)
+    await save(bob, { id, name: 'Better name' })
+    await db.as(bob, (tx) => tx.query(`insert into reviews (location_id, overall, cleanliness) values ($1, 4, 3)`, [id]))
+
+    const [{ get_my_contributions: mine }] = await db.rpc<{ get_my_contributions: any }>(bob, 'get_my_contributions')
+    expect(mine.reviews).toHaveLength(1)
+    expect(mine.reviews[0].location_name).toBe('Better name')
+    expect(mine.edits).toEqual([
+      expect.objectContaining({ kind: 'update', changed_fields: ['name'], location_id: id }),
+    ])
+    const [{ get_my_contributions: guest }] = await db.rpc<{ get_my_contributions: any }>(ANON, 'get_my_contributions')
+    expect(guest).toBeNull()
   })
 })
 

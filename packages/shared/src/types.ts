@@ -2,7 +2,8 @@
 // location → rooms structure and tri-state amenities.
 
 /** Crowdsourced facts: "nobody has said" is not the same as "no". */
-export type TriState = 'yes' | 'no' | 'unknown'
+export const TRI_STATES = ['yes', 'no', 'unknown'] as const
+export type TriState = (typeof TRI_STATES)[number]
 
 export const ACCESS_TYPES = ['public', 'customers_only', 'restricted'] as const
 export type AccessType = (typeof ACCESS_TYPES)[number]
@@ -23,8 +24,14 @@ export type DataSource = (typeof DATA_SOURCES)[number]
 export const REPORT_REASONS = ['closed', 'incorrect_info', 'duplicate', 'inappropriate'] as const
 export type ReportReason = (typeof REPORT_REASONS)[number]
 
+export const REPORT_STATUSES = ['open', 'resolved', 'dismissed'] as const
+export type ReportStatus = (typeof REPORT_STATUSES)[number]
+
 export const USER_ROLES = ['user', 'admin'] as const
 export type UserRole = (typeof USER_ROLES)[number]
+
+export const EDIT_KINDS = ['create', 'update', 'confirm', 'rollback', 'merge', 'delete', 'restore'] as const
+export type EditKind = (typeof EDIT_KINDS)[number]
 
 export interface Coordinates {
   /** Decimal degrees, −90 to 90. */
@@ -44,15 +51,15 @@ export type DayHours =
 export type WeeklyHours = [DayHours, DayHours, DayHours, DayHours, DayHours, DayHours, DayHours]
 
 export interface Room {
-  id: string
-  locationId: string
+  id?: string
   designation: RoomDesignation
   layout: RoomLayout
   changingTable: TriState
   adaAccessible: TriState
 }
 
-export interface Location {
+/** A map pin: one place holding one or more rooms. */
+export interface Restroom {
   id: string
   name: string
   coordinates: Coordinates
@@ -67,35 +74,119 @@ export interface Location {
   source: DataSource
   /** False until a user confirms a seeded or newly added listing. */
   verified: boolean
-  /** Average ratings rounded to one decimal place; null when there are no reviews. */
+  lastConfirmedAt: string | null
+  updatedAt: string
+  /** Averages rounded to one decimal place; null when there are no reviews. */
   avgOverall: number | null
   avgCleanliness: number | null
   reviewCount: number
-  createdBy: string | null
+  /** Null when today's hours are unknown. */
+  isOpen: boolean | null
+}
+
+export interface RestroomResult extends Restroom {
+  distanceMeters: number
+}
+
+export interface RestroomDetail extends Restroom {
   createdAt: string
-  updatedAt: string
+  /** Set when an admin removed the listing (only admins can see removed listings). */
+  deletedAt: string | null
+  mergedInto: string | null
+  isFavorite: boolean
+  createdByMe: boolean
 }
 
 export interface Review {
   id: string
-  locationId: string
   overall: number
   cleanliness: number
   comment: string | null
   /** Reviewer chose to hide their display name. Admins can still see the author. */
   anonymous: boolean
-  /** Null when anonymous (for non-admin viewers). */
+  /** Hidden by an admin; only admins see hidden reviews. */
+  hidden: boolean
+  /** Null when anonymous (unless the viewer is an admin). */
   authorDisplayName: string | null
+  /** Only provided to admins. */
+  authorId: string | null
+  isMine: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface LocationEdit {
+  id: number
+  kind: EditKind
+  changes: Record<string, { old: unknown; new: unknown }>
+  editorDisplayName: string | null
   createdAt: string
 }
 
-export interface Report {
+export interface Profile {
+  id: string
+  displayName: string
+  role: UserRole
+  suspendedUntil: string | null
+  suspensionReason: string | null
+  createdAt: string
+}
+
+export interface MyContributions {
+  reviews: {
+    id: string
+    locationId: string
+    locationName: string
+    overall: number
+    cleanliness: number
+    comment: string | null
+    anonymous: boolean
+    hidden: boolean
+    createdAt: string
+  }[]
+  edits: {
+    id: number
+    locationId: string
+    locationName: string
+    kind: EditKind
+    changedFields: string[]
+    createdAt: string
+  }[]
+}
+
+export interface PossibleDuplicate {
+  id: string
+  name: string
+  distanceMeters: number
+  similarity: number
+}
+
+export interface AdminReport {
   id: string
   locationId: string
+  locationName: string
+  locationDeleted: boolean
   reason: ReportReason
   comment: string | null
-  status: 'open' | 'resolved' | 'dismissed'
+  duplicateOf: string | null
+  duplicateOfName: string | null
+  status: ReportStatus
+  reporterId: string | null
+  reporterDisplayName: string | null
   createdAt: string
+  resolvedAt: string | null
+}
+
+export interface AdminUser {
+  id: string
+  displayName: string
+  email: string | null
+  role: UserRole
+  suspendedUntil: string | null
+  suspensionReason: string | null
+  createdAt: string
+  reviewCount: number
+  editCount: number
 }
 
 export interface SearchFilters {
@@ -110,5 +201,5 @@ export interface SearchFilters {
   freeOnly?: boolean
   openNow?: boolean
   /** 1–5. */
-  minCleanliness?: number
+  minCleanliness?: number | null
 }

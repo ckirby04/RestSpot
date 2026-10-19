@@ -465,19 +465,60 @@ begin
 end;
 $$;
 
--- Full listing details, including the review summary and (for signed-in users) favorite status.
+-- Listing plus review summary and the caller's favorite status.
+create function public.location_detail_json(loc public.locations) returns jsonb
+language sql stable security definer set search_path = public as $$
+  select location_json(loc) || jsonb_build_object(
+    'avg_overall', (select round(avg(overall), 1) from reviews v where v.location_id = loc.id and not v.hidden),
+    'avg_cleanliness', (select round(avg(cleanliness), 1) from reviews v where v.location_id = loc.id and not v.hidden),
+    'review_count', (select count(*) from reviews v where v.location_id = loc.id and not v.hidden),
+    'is_open', is_open_at(loc.hours, loc.time_zone),
+    'is_favorite', exists (select 1 from favorites f where f.location_id = loc.id and f.user_id = auth.uid()),
+    'created_by_me', loc.created_by is not null and loc.created_by = auth.uid()
+  );
+$$;
+
 create function public.get_location(location_id uuid) returns jsonb
 language sql stable security definer set search_path = public as $$
-  select location_json(l) || jsonb_build_object(
-    'avg_overall', (select round(avg(overall), 1) from reviews v where v.location_id = l.id and not v.hidden),
-    'avg_cleanliness', (select round(avg(cleanliness), 1) from reviews v where v.location_id = l.id and not v.hidden),
-    'review_count', (select count(*) from reviews v where v.location_id = l.id and not v.hidden),
-    'is_open', is_open_at(l.hours, l.time_zone),
-    'is_favorite', exists (select 1 from favorites f where f.location_id = l.id and f.user_id = auth.uid()),
-    'created_by_me', l.created_by is not null and l.created_by = auth.uid()
-  )
+  select location_detail_json(l)
   from locations l
   where l.id = get_location.location_id and (l.deleted_at is null or is_admin());
+$$;
+
+-- The caller's saved listings, most recently saved first.
+create function public.get_favorites() returns setof jsonb
+language sql stable security definer set search_path = public as $$
+  select location_detail_json(l)
+  from favorites f
+  join locations l on l.id = f.location_id
+  where f.user_id = auth.uid() and l.deleted_at is null
+  order by f.created_at desc;
+$$;
+
+-- The caller's reviews and listing edits, for their dashboard.
+create function public.get_my_contributions() returns jsonb
+language sql stable security definer set search_path = public as $$
+  select jsonb_build_object(
+    'reviews', coalesce((
+      select jsonb_agg(jsonb_build_object(
+        'id', v.id, 'location_id', v.location_id, 'location_name', l.name,
+        'overall', v.overall, 'cleanliness', v.cleanliness, 'comment', v.comment,
+        'anonymous', v.anonymous, 'hidden', v.hidden, 'created_at', v.created_at
+      ) order by v.created_at desc)
+      from reviews v join locations l on l.id = v.location_id
+      where v.author_id = auth.uid()
+    ), '[]'::jsonb),
+    'edits', coalesce((
+      select jsonb_agg(jsonb_build_object(
+        'id', e.id, 'location_id', e.location_id, 'location_name', l.name,
+        'kind', e.kind, 'changed_fields', (select coalesce(jsonb_agg(k), '[]'::jsonb) from jsonb_object_keys(e.changes) k),
+        'created_at', e.created_at
+      ) order by e.created_at desc)
+      from (select * from location_edits where editor_id = auth.uid() order by created_at desc limit 100) e
+      join locations l on l.id = e.location_id
+    ), '[]'::jsonb)
+  )
+  where auth.uid() is not null;
 $$;
 
 -- Reviews for a listing. Anonymous reviews hide the author from everyone except admins.
@@ -637,6 +678,43 @@ begin
     raise exception 'Listing not found' using errcode = 'P0002';
   end if;
   insert into location_edits (location_id, editor_id, kind) values (confirm_location.location_id, uid, 'confirm');
+end;
+$$;
+
+-- Create or replace the caller's review of a listing (one review per user per listing).
+create function public.save_my_review(
+  location_id uuid,
+  overall int,
+  cleanliness int,
+  comment text default null,
+  anonymous boolean default false
+) returns void
+language plpgsql security definer set search_path = public as $$
+declare
+  uid uuid := require_active_user();
+  clean_comment text := nullif(trim(comment), '');
+begin
+  if not exists (select 1 from locations l where l.id = save_my_review.location_id and l.deleted_at is null) then
+    raise exception 'Listing not found' using errcode = 'P0002';
+  end if;
+  insert into reviews as v (location_id, author_id, overall, cleanliness, comment, anonymous)
+  values (save_my_review.location_id, uid, overall, cleanliness, clean_comment, coalesce(anonymous, false))
+  on conflict on constraint reviews_location_id_author_id_key do update set
+    overall = excluded.overall,
+    cleanliness = excluded.cleanliness,
+    comment = excluded.comment,
+    anonymous = excluded.anonymous,
+    updated_at = now();
+end;
+$$;
+
+create function public.delete_my_review(location_id uuid) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then
+    raise exception 'Not signed in' using errcode = '28000';
+  end if;
+  delete from reviews v where v.location_id = delete_my_review.location_id and v.author_id = auth.uid();
 end;
 $$;
 
@@ -888,6 +966,8 @@ grant select, insert, delete on public.favorites to authenticated;
 grant execute on function
   public.search_restrooms(double precision, double precision, double precision, boolean, boolean, boolean, boolean, boolean, boolean, boolean, boolean, double precision, int),
   public.get_location(uuid),
+  public.get_favorites(),
+  public.get_my_contributions(),
   public.get_location_reviews(uuid),
   public.get_location_history(uuid),
   public.find_possible_duplicates(double precision, double precision, text, double precision, uuid),
@@ -898,6 +978,8 @@ to anon, authenticated;
 grant execute on function
   public.save_location(jsonb),
   public.confirm_location(uuid),
+  public.save_my_review(uuid, int, int, text, boolean),
+  public.delete_my_review(uuid),
   public.delete_my_account(),
   public.admin_set_location_deleted(uuid, boolean),
   public.admin_merge_locations(uuid, uuid),
