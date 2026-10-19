@@ -9,13 +9,12 @@ export function AppShell() {
   const location = useLocation()
   const mainRef = useRef<HTMLElement>(null)
 
-  // Move focus to the new page's heading on navigation, for screen reader and keyboard users.
-  const firstRender = useRef(true)
+  // Move focus to the new page's heading on navigation (not on first load),
+  // for screen reader and keyboard users.
+  const previousPath = useRef(location.pathname)
   useEffect(() => {
-    if (firstRender.current) {
-      firstRender.current = false
-      return
-    }
+    if (previousPath.current === location.pathname) return
+    previousPath.current = location.pathname
     const heading = mainRef.current?.querySelector<HTMLElement>('h1, h2')
     if (heading) {
       heading.tabIndex = -1
@@ -31,7 +30,7 @@ export function AppShell() {
         Skip to content
       </a>
       <header className="app-header">
-        <Link to="/" className="brand" aria-label="RestSpot home">
+        <Link to="/" className="brand">
           <span className="brand-mark" aria-hidden="true">
             R
           </span>

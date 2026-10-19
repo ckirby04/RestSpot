@@ -115,6 +115,18 @@ export async function createLocalApi(): Promise<RestSpotApi & { resetDatabase():
     setTimeout(() => changeListeners.get(table)?.forEach((l) => l()), 0)
   }
 
+  // PGlite coalesces IndexedDB flushes: a write made while a flush is running can
+  // return before it is persisted, and a quick reload would lose it. Flush the
+  // file system directly (not coalesced) after every write.
+  const fs = (pg as unknown as { fs?: { syncToFs?(): Promise<void> } }).fs
+  async function persist() {
+    await fs?.syncToFs?.()
+  }
+  async function written(table: string) {
+    await persist()
+    notify(table)
+  }
+
   async function asCaller<T>(fn: (tx: Parameters<Parameters<PGlite['transaction']>[0]>[0]) => Promise<T>): Promise<T> {
     try {
       return await pg.transaction(async (tx) => {
@@ -143,7 +155,8 @@ export async function createLocalApi(): Promise<RestSpotApi & { resetDatabase():
     )
   }
 
-  const MUTATING_RPCS = /^(save_location|confirm_location|admin_|save_my_review|delete_my_review)/
+  const READ_ONLY_RPCS = /^(get_|search_|find_|admin_list_|is_)/
+  const LISTING_RPCS = /^(save_location|confirm_location|admin_|save_my_review|delete_my_review)/
 
   function ident(table: string) {
     if (!TABLES.has(table)) throw new ApiError(`Unknown table ${table}`)
@@ -168,7 +181,8 @@ export async function createLocalApi(): Promise<RestSpotApi & { resetDatabase():
         return v !== null && typeof v === 'object' ? JSON.stringify(v) : v
       })
       const rows = await asCaller(async (tx) => (await tx.query<any>(`select * from public.${fn}(${params})`, values)).rows)
-      if (MUTATING_RPCS.test(fn)) notify('locations')
+      if (!READ_ONLY_RPCS.test(fn)) await persist()
+      if (LISTING_RPCS.test(fn)) notify('locations')
       switch (kind) {
         case 'void':
           return null
@@ -188,7 +202,7 @@ export async function createLocalApi(): Promise<RestSpotApi & { resetDatabase():
           keys.map((k) => row[k]),
         ),
       )
-      notify(table)
+      await written(table)
     },
     async update(table, values, match) {
       const keys = Object.keys(values)
@@ -199,12 +213,12 @@ export async function createLocalApi(): Promise<RestSpotApi & { resetDatabase():
           [...keys.map((k) => values[k]), ...where.values],
         ),
       )
-      notify(table)
+      await written(table)
     },
     async delete(table, match) {
       const where = whereClause(match)
       await asCaller((tx) => tx.query(`delete from ${ident(table)} where ${where.sql}`, where.values))
-      notify(table)
+      await written(table)
     },
     async selectOne(table, match) {
       const where = whereClause(match)
@@ -226,6 +240,7 @@ export async function createLocalApi(): Promise<RestSpotApi & { resetDatabase():
       `insert into auth.users (email, raw_user_meta_data, dev_password_sha256) values ($1, $2, $3) returning id`,
       [email, JSON.stringify(meta), password ? await sha256(password) : null],
     )
+    await persist()
     return { userId: rows[0].id, email }
   }
 
@@ -269,6 +284,7 @@ export async function createLocalApi(): Promise<RestSpotApi & { resetDatabase():
     async updatePassword(password) {
       if (!session) throw new ApiError('Not signed in')
       await pg.query('update auth.users set dev_password_sha256 = $1 where id = $2', [await sha256(password), session.userId])
+      await persist()
     },
   }
 

@@ -12,6 +12,7 @@
     "build": "npm run build -w @restspot/web",
     "lint": "npm run lint -w @restspot/web",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present"
+    "test": "npm run test --workspaces --if-present",
+    "test:e2e": "npm run test:e2e -w @restspot/web"
   }
 }

@@ -59,7 +59,7 @@ export function Stars({ value, label }: { value: number | null; label: string })
   if (value === null) return <span className="muted">No ratings yet</span>
   const rounded = Math.round(value)
   return (
-    <span className="stars" aria-label={`${label}: ${value.toFixed(1)} out of 5`}>
+    <span className="stars" role="img" aria-label={`${label}: ${value.toFixed(1)} out of 5`}>
       <span aria-hidden="true">
         {'★'.repeat(rounded)}
         <span className="stars-empty">{'★'.repeat(5 - rounded)}</span>
