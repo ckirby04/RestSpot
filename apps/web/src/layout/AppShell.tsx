@@ -41,10 +41,13 @@ export function AppShell() {
           <NavLink to="/" end>
             Find
           </NavLink>
-          <NavLink to="/add">Add a restroom</NavLink>
+          <NavLink to="/add" aria-label="Add a restroom">
+            Add<span className="nav-long"> a restroom</span>
+          </NavLink>
           {session ? (
             <NavLink to="/dashboard">
-              {isAdmin ? 'Dashboard (admin)' : 'Dashboard'}
+              Dashboard
+              {isAdmin && <span className="visually-hidden"> (admin)</span>}
               {profile && <span className="visually-hidden">, signed in as {profile.displayName}</span>}
             </NavLink>
           ) : (

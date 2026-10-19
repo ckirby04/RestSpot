@@ -91,10 +91,13 @@ export function RestroomMap(props: RestroomMapProps) {
       attributionControl: { compact: true },
     })
     mapRef.current = map
+    if (import.meta.env.DEV) (window as unknown as { __restspotMap: MapLibreMap }).__restspotMap = map
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
     map.addControl(new maplibregl.ScaleControl({ unit: 'imperial' }), 'bottom-left')
 
-    map.on('load', () => {
+    // 'style.load' fires once the style is parsed; 'load' waits for every initial tile,
+    // which can take a long time (or never happen) on a slow connection.
+    map.once('style.load', () => {
       map.addSource('radius', { type: 'geojson', data: EMPTY })
       map.addLayer({
         id: 'radius-fill',

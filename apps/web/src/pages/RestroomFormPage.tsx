@@ -66,11 +66,11 @@ function newRoom(designation: RoomDesignation, family = false, like?: Room): Roo
 export function RestroomFormPage() {
   const { id } = useParams()
   const isEdit = Boolean(id)
-  const { session, canContribute, isSuspended } = useAuth()
+  const { session, profileLoading, canContribute, isSuspended } = useAuth()
   const location = useLocation()
   const { data: existing, isLoading } = useRestroom(id)
 
-  if (session === undefined || (isEdit && isLoading)) return <Spinner />
+  if (session === undefined || profileLoading || (isEdit && isLoading)) return <Spinner />
   if (!session) {
     return (
       <div className="stack">

@@ -7,6 +7,8 @@ interface AuthState {
   /** Undefined while the initial session is loading. */
   session: Session | null | undefined
   profile: Profile | null
+  /** True while the signed-in user's profile (and so their role) is still loading. */
+  profileLoading: boolean
   isAdmin: boolean
   /** Signed in and not suspended. */
   canContribute: boolean
@@ -34,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [api, queryClient])
 
-  const { data: profile = null } = useQuery({
+  const { data: profile = null, isPending: profilePending } = useQuery({
     queryKey: ['profile', session?.userId ?? null],
     queryFn: () => api.getMyProfile(),
     enabled: Boolean(session),
@@ -44,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value: AuthState = {
     session,
     profile: session ? profile : null,
+    profileLoading: Boolean(session) && profilePending,
     isAdmin: Boolean(session && profile?.role === 'admin'),
     canContribute: Boolean(session && profile && !isSuspended),
     isSuspended,

@@ -16,8 +16,8 @@ import { useAuth } from '../auth/AuthProvider.tsx'
 import { ErrorText, formatDate, formatRelative, OpenStatus, RestroomFeatures, Spinner, Stars } from '../components/ui.tsx'
 
 export function DashboardPage() {
-  const { session, profile, isAdmin, isSuspended } = useAuth()
-  if (session === undefined) return <Spinner />
+  const { session, profile, profileLoading, isAdmin, isSuspended } = useAuth()
+  if (session === undefined || profileLoading) return <Spinner />
   if (!session) return <Navigate to="/signin" state={{ from: '/dashboard' }} replace />
 
   return (
