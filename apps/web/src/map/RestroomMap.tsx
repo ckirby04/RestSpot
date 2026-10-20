@@ -8,7 +8,7 @@ import { maplibregl } from './maplibre.ts'
 const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty'
 
 // University of Arkansas — shown until we know where to search.
-export const DEFAULT_CENTER: Coordinates = { lat: 36.0687, lng: -94.1737 }
+const DEFAULT_CENTER: Coordinates = { lat: 36.0687, lng: -94.1737 }
 
 export interface MapPicker {
   coordinates: Coordinates | null
@@ -151,15 +151,7 @@ export function RestroomMap(props: RestroomMapProps) {
         source: 'restrooms',
         paint: {
           'circle-radius': ['case', ['get', 'selected'], 12, 8],
-          'circle-color': [
-            'match',
-            ['get', 'status'],
-            'open',
-            '#1a7f37',
-            'closed',
-            '#6e7781',
-            /* unknown */ '#8250df',
-          ],
+          'circle-color': ['match', ['get', 'status'], 'open', '#1a7f37', 'closed', '#6e7781', /* unknown */ '#8250df'],
           'circle-stroke-color': ['case', ['get', 'selected'], '#111111', '#ffffff'],
           'circle-stroke-width': ['case', ['get', 'selected'], 3, 2],
         },
@@ -215,9 +207,7 @@ export function RestroomMap(props: RestroomMapProps) {
 
   useEffect(() => {
     if (!loaded) return
-    ;(mapRef.current?.getSource('restrooms') as GeoJSONSource | undefined)?.setData(
-      resultsGeoJson(results, selectedId),
-    )
+    ;(mapRef.current?.getSource('restrooms') as GeoJSONSource | undefined)?.setData(resultsGeoJson(results, selectedId))
   }, [loaded, results, selectedId])
 
   useEffect(() => {

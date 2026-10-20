@@ -166,7 +166,14 @@ const SAMPLES: {
   },
 ]
 
-const REVIEWS: [sampleIndex: number, reviewer: 0 | 1, overall: number, cleanliness: number, comment: string | null, anonymous: boolean][] = [
+const REVIEWS: [
+  sampleIndex: number,
+  reviewer: 0 | 1,
+  overall: number,
+  cleanliness: number,
+  comment: string | null,
+  anonymous: boolean,
+][] = [
   [0, 0, 5, 5, 'Always clean, plenty of stalls.', false],
   [0, 1, 4, 4, null, true],
   [1, 0, 4, 3, 'Busy during finals week.', false],
@@ -200,7 +207,18 @@ export async function seedSampleData(
        values ($1, extensions.st_setsrid(extensions.st_makepoint($3, $2), 4326)::extensions.geography, $4, $5, $6, $7, $8, $9,
                case when $9 then now() - interval '3 days' end, $10)
        returning id`,
-      [s.name, s.lat, s.lng, s.access, s.fee, s.key, JSON.stringify(s.hours), s.notes ?? null, s.verified ?? false, userIds[0]],
+      [
+        s.name,
+        s.lat,
+        s.lng,
+        s.access,
+        s.fee,
+        s.key,
+        JSON.stringify(s.hours),
+        s.notes ?? null,
+        s.verified ?? false,
+        userIds[0],
+      ],
     )
     const id = rows[0].id
     ids.push(id)

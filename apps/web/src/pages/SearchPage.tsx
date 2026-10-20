@@ -1,17 +1,11 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
-import {
-  ACCESS_SHORT_LABELS,
-  distanceMeters,
-  formatDistance,
-  LIMITS,
-  type SearchFilters,
-} from '@restspot/shared'
+import { ACCESS_SHORT_LABELS, distanceMeters, formatDistance, LIMITS, type SearchFilters } from '@restspot/shared'
 import { useSearch } from '../api/hooks.ts'
 import { ErrorText, OpenStatus, RestroomFeatures, Spinner, Stars } from '../components/ui.tsx'
-import { useMapControls } from '../layout/MapLayout.tsx'
+import { useMapControls } from '../layout/useMapControls.ts'
 import { geocodeAddress, type GeocodeResult } from '../lib/location.ts'
-import { DEFAULT_FILTERS, useSearchState } from '../search/SearchContext.tsx'
+import { DEFAULT_FILTERS, useSearchState } from '../search/useSearchState.ts'
 
 const RADIUS_OPTIONS = [0.1, 0.25, 0.5, 1, 2, 5, 10, LIMITS.radiusMaxMiles]
 
@@ -49,7 +43,9 @@ export function SearchPage() {
 
   const activeFilterCount = TOGGLE_FILTERS.filter((f) => filters[f.key]).length + (filters.minCleanliness ? 1 : 0)
   const movedFar =
-    map.movedCenter && origin && distanceMeters(map.movedCenter, origin.coordinates) > Math.max(300, filters.radiusMiles * 400)
+    map.movedCenter &&
+    origin &&
+    distanceMeters(map.movedCenter, origin.coordinates) > Math.max(300, filters.radiusMiles * 400)
 
   return (
     <div className="search-page">

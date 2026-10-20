@@ -9,7 +9,14 @@ const fixtures = [
     id: 1,
     lat: CAMPUS.lat,
     lon: CAMPUS.lng,
-    tags: { amenity: 'toilets', name: 'Campus Restroom', male: 'yes', female: 'yes', wheelchair: 'yes', opening_hours: '24/7' },
+    tags: {
+      amenity: 'toilets',
+      name: 'Campus Restroom',
+      male: 'yes',
+      female: 'yes',
+      wheelchair: 'yes',
+      opening_hours: '24/7',
+    },
   })!,
   toLikelyListing({
     type: 'node',
@@ -38,7 +45,10 @@ it('generated SQL imports listings idempotently and never overwrites user edits'
   await runLikeSqlEditor(db, toSql(fixtures, 'test'))
   await runLikeSqlEditor(db, toSql(fixtures, 'test again'))
 
-  const results = await db.rpc<Record<string, any>>(ANON, 'search_restrooms', { near_lat: CAMPUS.lat, near_lng: CAMPUS.lng })
+  const results = await db.rpc<Record<string, any>>(ANON, 'search_restrooms', {
+    near_lat: CAMPUS.lat,
+    near_lng: CAMPUS.lng,
+  })
   expect(results.map((r) => [r.name, r.source, r.verified, r.rooms.length]).sort()).toEqual([
     ['Campus Restroom', 'osm', false, 2],
     ["Casey's", 'poi_inferred', false, 0],

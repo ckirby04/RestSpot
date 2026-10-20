@@ -17,23 +17,15 @@ import {
   type RestroomDetail,
   type Review,
 } from '@restspot/shared'
-import { useApi } from '../api/ApiProvider.tsx'
+import { useApi } from '../api/useApi.ts'
 import { useHistory, useRestroom, useRestroomMutation, useReviews, useSearch } from '../api/hooks.ts'
-import { useAuth } from '../auth/AuthProvider.tsx'
-import {
-  Dialog,
-  ErrorText,
-  formatDate,
-  formatRelative,
-  OpenStatus,
-  RoomRow,
-  Spinner,
-  StarInput,
-  Stars,
-} from '../components/ui.tsx'
-import { useMapControls } from '../layout/MapLayout.tsx'
+import { useAuth } from '../auth/useAuth.ts'
+import { Dialog, ErrorText, OpenStatus, RoomRow, Spinner, StarInput, Stars } from '../components/ui.tsx'
+import { formatDate, formatRelative } from '../lib/format.ts'
+import { useNow } from '../lib/useNow.ts'
+import { useMapControls } from '../layout/useMapControls.ts'
 import { isApplePlatform } from '../lib/location.ts'
-import { useSearchState } from '../search/SearchContext.tsx'
+import { useSearchState } from '../search/useSearchState.ts'
 
 export function RestroomPage() {
   const { id } = useParams()
@@ -52,9 +44,7 @@ export function RestroomPage() {
   useEffect(() => {
     if (!restroom) return
     const list = results ?? []
-    map.showResults(
-      list.some((r) => r.id === restroom.id) ? list : [...list, { ...restroom, distanceMeters: 0 }],
-    )
+    map.showResults(list.some((r) => r.id === restroom.id) ? list : [...list, { ...restroom, distanceMeters: 0 }])
   }, [map, results, restroom])
 
   const lat = restroom?.coordinates.lat
@@ -92,7 +82,8 @@ export function RestroomPage() {
 }
 
 function RestroomHeader({ restroom, distance }: { restroom: RestroomDetail; distance: number | null }) {
-  const today = localTimeIn(restroom.timeZone, new Date()).day
+  const now = useNow()
+  const today = localTimeIn(restroom.timeZone, now).day
   return (
     <header className="detail-header">
       {restroom.deletedAt && (
@@ -189,7 +180,9 @@ function RestroomActions({ restroom }: { restroom: RestroomDetail }) {
         type="button"
         className="button button-secondary"
         disabled={confirm.isPending || confirmed}
-        onClick={() => (canContribute ? confirm.mutate(undefined, { onSuccess: () => setConfirmed(true) }) : requireSignIn())}
+        onClick={() =>
+          canContribute ? confirm.mutate(undefined, { onSuccess: () => setConfirmed(true) }) : requireSignIn()
+        }
       >
         {confirmed ? 'Thanks for confirming!' : 'Info is accurate'}
       </button>
@@ -244,7 +237,14 @@ function ReportDialog({ restroomId, open, onClose }: { restroomId: string; open:
             <legend>What’s wrong?</legend>
             {REPORT_REASONS.map((r) => (
               <label key={r} className="radio-row">
-                <input type="radio" name="reason" value={r} checked={reason === r} onChange={() => setReason(r)} required />
+                <input
+                  type="radio"
+                  name="reason"
+                  value={r}
+                  checked={reason === r}
+                  onChange={() => setReason(r)}
+                  required
+                />
                 {REPORT_REASON_LABELS[r]}
               </label>
             ))}
@@ -270,7 +270,8 @@ function ReportDialog({ restroomId, open, onClose }: { restroomId: string; open:
 }
 
 function RestroomInfo({ restroom }: { restroom: RestroomDetail }) {
-  const today = localTimeIn(restroom.timeZone, new Date()).day
+  const now = useNow()
+  const today = localTimeIn(restroom.timeZone, now).day
   const browserZone = Intl.DateTimeFormat().resolvedOptions().timeZone
   return (
     <>
@@ -297,7 +298,9 @@ function RestroomInfo({ restroom }: { restroom: RestroomDetail }) {
           <dt>Cost</dt>
           <dd>{FEE_LABELS[restroom.fee]}</dd>
           <dt>Key or code</dt>
-          <dd>{restroom.keyRequired === 'yes' ? 'Required' : restroom.keyRequired === 'no' ? 'Not needed' : 'Not sure'}</dd>
+          <dd>
+            {restroom.keyRequired === 'yes' ? 'Required' : restroom.keyRequired === 'no' ? 'Not needed' : 'Not sure'}
+          </dd>
         </dl>
         {restroom.notes && <p className="notes">{restroom.notes}</p>}
       </section>
@@ -521,7 +524,9 @@ function AdminSection({ restroom }: { restroom: RestroomDetail }) {
   const { isAdmin } = useAuth()
   const [keepId, setKeepId] = useState('')
   const nearby = useSearch(isAdmin ? restroom.coordinates : null, { radiusMiles: 0.25 })
-  const remove = useRestroomMutation(restroom.id, (removed: boolean) => api.admin.setRestroomRemoved(restroom.id, removed))
+  const remove = useRestroomMutation(restroom.id, (removed: boolean) =>
+    api.admin.setRestroomRemoved(restroom.id, removed),
+  )
   const merge = useRestroomMutation(restroom.id, () => api.admin.mergeRestrooms(restroom.id, keepId))
 
   if (!isAdmin) return null

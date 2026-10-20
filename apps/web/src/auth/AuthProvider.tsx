@@ -1,21 +1,9 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import type { Profile, Session } from '@restspot/shared'
-import { useApi } from '../api/ApiProvider.tsx'
-
-interface AuthState {
-  /** Undefined while the initial session is loading. */
-  session: Session | null | undefined
-  profile: Profile | null
-  /** True while the signed-in user's profile (and so their role) is still loading. */
-  profileLoading: boolean
-  isAdmin: boolean
-  /** Signed in and not suspended. */
-  canContribute: boolean
-  isSuspended: boolean
-}
-
-const AuthContext = createContext<AuthState | null>(null)
+import type { Session } from '@restspot/shared'
+import { useApi } from '../api/useApi.ts'
+import { useNow } from '../lib/useNow.ts'
+import { AuthContext, type AuthState } from './useAuth.ts'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const api = useApi()
@@ -42,7 +30,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     enabled: Boolean(session),
   })
 
-  const isSuspended = Boolean(profile?.suspendedUntil && new Date(profile.suspendedUntil) > new Date())
+  const now = useNow()
+  const isSuspended = Boolean(profile?.suspendedUntil && new Date(profile.suspendedUntil) > now)
   const value: AuthState = {
     session,
     profile: session ? profile : null,
@@ -52,10 +41,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isSuspended,
   }
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-}
-
-export function useAuth(): AuthState {
-  const auth = useContext(AuthContext)
-  if (!auth) throw new Error('useAuth must be used inside AuthProvider')
-  return auth
 }

@@ -23,7 +23,8 @@ const BLANK_STYLE = {
 
 export const GEOCODE_RESULTS = [
   {
-    display_name: 'Fayetteville Public Library, 401, West Mountain Street, Fayetteville, Washington County, Arkansas, 72701, United States',
+    display_name:
+      'Fayetteville Public Library, 401, West Mountain Street, Fayetteville, Washington County, Arkansas, 72701, United States',
     name: 'Fayetteville Public Library',
     lat: '36.0596',
     lon: '-94.1617',

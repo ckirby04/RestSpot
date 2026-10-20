@@ -78,7 +78,10 @@ export function createSupabaseAuth(client: SupabaseClient, redirectTo?: string):
       fail((await client.auth.signInWithOAuth({ provider, options: { redirectTo } })).error)
     },
     async sendPasswordReset(email) {
-      fail((await client.auth.resetPasswordForEmail(email, { redirectTo: redirectTo && `${redirectTo}/reset-password` })).error)
+      fail(
+        (await client.auth.resetPasswordForEmail(email, { redirectTo: redirectTo && `${redirectTo}/reset-password` }))
+          .error,
+      )
     },
     async signOut() {
       fail((await client.auth.signOut()).error)

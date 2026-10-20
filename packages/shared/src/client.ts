@@ -63,7 +63,8 @@ export function createRestSpotApi(opts: { backendName: string; transport: Transp
     signInWithOAuth: (p) => auth.signInWithOAuth(p),
     sendPasswordReset: (e) => auth.sendPasswordReset(e),
     async updatePassword(p) {
-      if (p.length < LIMITS.passwordMin) throw new ApiError(`Password must be at least ${LIMITS.passwordMin} characters`)
+      if (p.length < LIMITS.passwordMin)
+        throw new ApiError(`Password must be at least ${LIMITS.passwordMin} characters`)
       await auth.updatePassword(p)
     },
     signOut: () => auth.signOut(),

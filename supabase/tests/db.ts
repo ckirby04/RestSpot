@@ -34,7 +34,9 @@ export type Caller = { role: 'anon' } | { role: 'authenticated'; userId: string 
 export async function createDb() {
   const pg = await PGlite.create({ extensions: { postgis, pg_trgm } })
   await pg.exec(SUPABASE_STUB)
-  for (const file of readdirSync(MIGRATIONS_DIR).filter((f) => f.endsWith('.sql')).sort()) {
+  for (const file of readdirSync(MIGRATIONS_DIR)
+    .filter((f) => f.endsWith('.sql'))
+    .sort()) {
     await pg.exec(readFileSync(join(MIGRATIONS_DIR, file), 'utf8'))
   }
   await pg.exec('grant usage on schema extensions to anon, authenticated, service_role')

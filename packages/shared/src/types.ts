@@ -42,10 +42,7 @@ export interface Coordinates {
 
 /** Hours for one day. `close` earlier than `open` means the interval runs past midnight. */
 export type DayHours =
-  | { kind: 'unknown' }
-  | { kind: 'closed' }
-  | { kind: 'all_day' }
-  | { kind: 'open'; open: string; close: string }
+  { kind: 'unknown' } | { kind: 'closed' } | { kind: 'all_day' } | { kind: 'open'; open: string; close: string }
 
 /** Index 0 = Sunday … 6 = Saturday, matching `Date.getDay()`. */
 export type WeeklyHours = [DayHours, DayHours, DayHours, DayHours, DayHours, DayHours, DayHours]

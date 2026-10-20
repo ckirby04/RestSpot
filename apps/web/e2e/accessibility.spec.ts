@@ -9,7 +9,9 @@ async function expectNoViolations(page: Page) {
     // The map canvas is a visual duplicate of the results list.
     .exclude('.maplibregl-canvas')
     .analyze()
-  const summary = results.violations.map((v) => `${v.id}: ${v.help} (${v.nodes.map((n) => n.target.join(' ')).join(', ')})`)
+  const summary = results.violations.map(
+    (v) => `${v.id}: ${v.help} (${v.nodes.map((n) => n.target.join(' ')).join(', ')})`,
+  )
   expect(summary).toEqual([])
 }
 

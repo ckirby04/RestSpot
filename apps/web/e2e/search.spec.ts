@@ -54,7 +54,9 @@ test.describe('finding restrooms', () => {
     await context.clearPermissions()
     await page.goto('/')
     await waitForApp(page)
-    await expect(page.getByRole('alert').filter({ hasText: /Location access is off|location isn’t available/ })).toBeVisible()
+    await expect(
+      page.getByRole('alert').filter({ hasText: /Location access is off|location isn’t available/ }),
+    ).toBeVisible()
 
     await page.getByRole('searchbox', { name: 'Address or place' }).fill('Fayetteville Public Library')
     await page.getByRole('button', { name: 'Search', exact: true }).click()

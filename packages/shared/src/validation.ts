@@ -2,13 +2,7 @@
 // limits with CHECK constraints; these give users fast, friendly errors.
 import { z } from 'zod'
 import { isValidHHMM } from './hours.ts'
-import {
-  ACCESS_TYPES,
-  FEE_TYPES,
-  REPORT_REASONS,
-  ROOM_DESIGNATIONS,
-  ROOM_LAYOUTS,
-} from './types.ts'
+import { ACCESS_TYPES, FEE_TYPES, REPORT_REASONS, ROOM_DESIGNATIONS, ROOM_LAYOUTS } from './types.ts'
 
 export const LIMITS = {
   nameMax: 100,
@@ -25,7 +19,12 @@ const triState = z.enum(['yes', 'no', 'unknown'])
 const hhmm = z.string().refine(isValidHHMM, 'Use 24-hour HH:MM')
 const rating = z.number().int().min(1).max(5)
 const optionalText = (max: number) =>
-  z.string().trim().max(max).transform((s) => (s === '' ? null : s)).nullable()
+  z
+    .string()
+    .trim()
+    .max(max)
+    .transform((s) => (s === '' ? null : s))
+    .nullable()
 
 export const coordinatesSchema = z.object({
   lat: z.number().min(-90).max(90),

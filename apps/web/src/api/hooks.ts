@@ -4,7 +4,7 @@
 import { useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Coordinates, SearchFilters } from '@restspot/shared'
-import { useApi } from './ApiProvider.tsx'
+import { useApi } from './useApi.ts'
 
 /** Refetch listing data whenever any listing changes (realtime on Supabase). */
 export function useLiveRestroomUpdates() {

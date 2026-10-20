@@ -42,15 +42,15 @@ docs/                Proposal, decisions log, setup guides
 
 ## Scripts
 
-| Command | What it does |
-|---|---|
-| `npm run dev` | Start the website (local database unless Supabase keys are set) |
-| `npm test` | All tests: shared logic, database (RLS, RPCs, 10k-row performance), importer |
-| `npm run test:e2e` | End-to-end browser tests (Playwright) against the local database; run `npx playwright install chromium` in `apps/web` once first |
-| `npm run typecheck` | TypeScript across all packages |
-| `npm run lint` | Lint the website |
-| `npm run build` | Production build of the website into `apps/web/dist` |
-| `npm run import -w @restspot/osm-import -- --preset nwa --likely --out <file>` | Regenerate OSM seed data |
+| Command                                                                        | What it does                                                                                                                     |
+| ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`                                                                  | Start the website (local database unless Supabase keys are set)                                                                  |
+| `npm test`                                                                     | All tests: shared logic, database (RLS, RPCs, 10k-row performance), importer                                                     |
+| `npm run test:e2e`                                                             | End-to-end browser tests (Playwright) against the local database; run `npx playwright install chromium` in `apps/web` once first |
+| `npm run typecheck`                                                            | TypeScript across all packages                                                                                                   |
+| `npm run lint`                                                                 | Lint the website                                                                                                                 |
+| `npm run build`                                                                | Production build of the website into `apps/web/dist`                                                                             |
+| `npm run import -w @restspot/osm-import -- --preset nwa --likely --out <file>` | Regenerate OSM seed data                                                                                                         |
 
 ## Architecture in brief
 

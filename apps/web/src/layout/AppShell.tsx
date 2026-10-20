@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
-import { useApi } from '../api/ApiProvider.tsx'
-import { useAuth } from '../auth/AuthProvider.tsx'
+import { useApi } from '../api/useApi.ts'
+import { useAuth } from '../auth/useAuth.ts'
 
 export function AppShell() {
   const api = useApi()

@@ -20,7 +20,11 @@ async function save(caller: Caller, overrides: Record<string, unknown> = {}) {
 }
 
 async function search(caller: Caller, args: Record<string, unknown> = {}) {
-  return db.rpc<Record<string, any>>(caller, 'search_restrooms', { near_lat: CAMPUS.lat, near_lng: CAMPUS.lng, ...args })
+  return db.rpc<Record<string, any>>(caller, 'search_restrooms', {
+    near_lat: CAMPUS.lat,
+    near_lng: CAMPUS.lng,
+    ...args,
+  })
 }
 
 describe('accounts', () => {
@@ -73,9 +77,9 @@ describe('listings', () => {
     await expect(save(alice, { name: 'x'.repeat(101) })).rejects.toThrow()
     await expect(save(alice, { lat: 91 })).rejects.toThrow(/Invalid coordinates/)
     await expect(save(alice, { rooms: [] })).rejects.toThrow(/at least one room/)
-    await expect(
-      save(alice, { rooms: [{ designation: 'mens', layout: 'family' }] }),
-    ).rejects.toThrow(/family_rooms_are_all_gender/)
+    await expect(save(alice, { rooms: [{ designation: 'mens', layout: 'family' }] })).rejects.toThrow(
+      /family_rooms_are_all_gender/,
+    )
     await expect(
       save(alice, { hours: [{ kind: 'open', open: '9:00', close: '17:00' }, ...Array(6).fill({ kind: 'closed' })] }),
     ).rejects.toThrow(/HH:MM/)
@@ -179,7 +183,11 @@ describe('reviews', () => {
     const id = await save(alice)
     const review = (c: Caller, overall: number, cleanliness: number) =>
       db.as(c, (tx) =>
-        tx.query(`insert into reviews (location_id, overall, cleanliness) values ($1, $2, $3)`, [id, overall, cleanliness]),
+        tx.query(`insert into reviews (location_id, overall, cleanliness) values ($1, $2, $3)`, [
+          id,
+          overall,
+          cleanliness,
+        ]),
       )
     await review(alice, 5, 4)
     await review(bob, 4, 4)
@@ -204,21 +212,42 @@ describe('reviews', () => {
       insert(alice, `insert into reviews (location_id, overall, cleanliness) values ($1, 6, 5)`, [id]),
     ).rejects.toThrow(/check constraint/)
     await expect(
-      insert(alice, `insert into reviews (location_id, author_id, overall, cleanliness) values ($1, $2, 5, 5)`, [id, bob.userId]),
+      insert(alice, `insert into reviews (location_id, author_id, overall, cleanliness) values ($1, $2, 5, 5)`, [
+        id,
+        bob.userId,
+      ]),
     ).rejects.toThrow(/permission denied/)
   })
 
   it('save_my_review creates then replaces the caller’s review', async () => {
     const id = await save(alice)
-    await db.rpc(bob, 'save_my_review', { location_id: id, overall: 2, cleanliness: 3, comment: '  ', anonymous: false })
-    await db.rpc(bob, 'save_my_review', { location_id: id, overall: 5, cleanliness: 4, comment: 'Better now', anonymous: true })
+    await db.rpc(bob, 'save_my_review', {
+      location_id: id,
+      overall: 2,
+      cleanliness: 3,
+      comment: '  ',
+      anonymous: false,
+    })
+    await db.rpc(bob, 'save_my_review', {
+      location_id: id,
+      overall: 5,
+      cleanliness: 4,
+      comment: 'Better now',
+      anonymous: true,
+    })
     const reviews = await db.rpc<Record<string, any>>(bob, 'get_location_reviews', { location_id: id })
     expect(reviews).toHaveLength(1)
-    expect(reviews[0]).toMatchObject({ overall: 5, cleanliness: 4, comment: 'Better now', anonymous: true, is_mine: true })
+    expect(reviews[0]).toMatchObject({
+      overall: 5,
+      cleanliness: 4,
+      comment: 'Better now',
+      anonymous: true,
+      is_mine: true,
+    })
 
-    await expect(
-      db.rpc(bob, 'save_my_review', { location_id: id, overall: 0, cleanliness: 4 }),
-    ).rejects.toThrow(/check constraint/)
+    await expect(db.rpc(bob, 'save_my_review', { location_id: id, overall: 0, cleanliness: 4 })).rejects.toThrow(
+      /check constraint/,
+    )
     await expect(db.rpc(ANON, 'save_my_review', { location_id: id, overall: 3, cleanliness: 3 })).rejects.toThrow()
 
     await db.rpc(bob, 'delete_my_review', { location_id: id })
@@ -228,7 +257,10 @@ describe('reviews', () => {
   it('hides anonymous reviewers from everyone but admins', async () => {
     const id = await save(alice)
     await db.as(bob, (tx) =>
-      tx.query(`insert into reviews (location_id, overall, cleanliness, comment, anonymous) values ($1, 3, 2, 'meh', true)`, [id]),
+      tx.query(
+        `insert into reviews (location_id, overall, cleanliness, comment, anonymous) values ($1, 3, 2, 'meh', true)`,
+        [id],
+      ),
     )
     await db.as(alice, (tx) =>
       tx.query(`insert into reviews (location_id, overall, cleanliness) values ($1, 5, 5)`, [id]),
@@ -281,14 +313,14 @@ describe('reports and favorites', () => {
   it('lists my contributions', async () => {
     const id = await save(alice)
     await save(bob, { id, name: 'Better name' })
-    await db.as(bob, (tx) => tx.query(`insert into reviews (location_id, overall, cleanliness) values ($1, 4, 3)`, [id]))
+    await db.as(bob, (tx) =>
+      tx.query(`insert into reviews (location_id, overall, cleanliness) values ($1, 4, 3)`, [id]),
+    )
 
     const [{ get_my_contributions: mine }] = await db.rpc<{ get_my_contributions: any }>(bob, 'get_my_contributions')
     expect(mine.reviews).toHaveLength(1)
     expect(mine.reviews[0].location_name).toBe('Better name')
-    expect(mine.edits).toEqual([
-      expect.objectContaining({ kind: 'update', changed_fields: ['name'], location_id: id }),
-    ])
+    expect(mine.edits).toEqual([expect.objectContaining({ kind: 'update', changed_fields: ['name'], location_id: id })])
     const [{ get_my_contributions: guest }] = await db.rpc<{ get_my_contributions: any }>(ANON, 'get_my_contributions')
     expect(guest).toBeNull()
   })
@@ -309,9 +341,15 @@ describe('moderation', () => {
 
   it('only admins can moderate', async () => {
     const id = await save(alice)
-    await expect(db.rpc(alice, 'admin_set_location_deleted', { location_id: id, deleted: true })).rejects.toThrow(/Admins only/)
-    await expect(db.rpc(alice, 'admin_set_suspension', { user_id: bob.userId, until: null })).rejects.toThrow(/Admins only/)
-    await expect(db.rpc(admin, 'admin_set_suspension', { user_id: admin.userId, until: null })).rejects.toThrow(/yourself/)
+    await expect(db.rpc(alice, 'admin_set_location_deleted', { location_id: id, deleted: true })).rejects.toThrow(
+      /Admins only/,
+    )
+    await expect(db.rpc(alice, 'admin_set_suspension', { user_id: bob.userId, until: null })).rejects.toThrow(
+      /Admins only/,
+    )
+    await expect(db.rpc(admin, 'admin_set_suspension', { user_id: admin.userId, until: null })).rejects.toThrow(
+      /yourself/,
+    )
   })
 
   it('removed listings disappear for users but not admins', async () => {
@@ -319,14 +357,18 @@ describe('moderation', () => {
     await db.rpc(admin, 'admin_set_location_deleted', { location_id: id, deleted: true })
     expect(await search(ANON)).toHaveLength(0)
     expect((await db.rpc<{ get_location: any }>(ANON, 'get_location', { location_id: id }))[0].get_location).toBeNull()
-    expect((await db.rpc<{ get_location: any }>(admin, 'get_location', { location_id: id }))[0].get_location).not.toBeNull()
+    expect(
+      (await db.rpc<{ get_location: any }>(admin, 'get_location', { location_id: id }))[0].get_location,
+    ).not.toBeNull()
   })
 
   it('merges duplicates, moving reviews and favorites', async () => {
     const keep = await save(alice, { name: 'Gas Station' })
     const dupe = await save(bob, { name: 'Gas Station (dupe)', ...north(CAMPUS, 10) })
     const review = (c: Caller, loc: string, overall: number) =>
-      db.as(c, (tx) => tx.query(`insert into reviews (location_id, overall, cleanliness) values ($1, $2, 3)`, [loc, overall]))
+      db.as(c, (tx) =>
+        tx.query(`insert into reviews (location_id, overall, cleanliness) values ($1, $2, 3)`, [loc, overall]),
+      )
     await review(alice, keep, 5)
     await review(alice, dupe, 1) // same author on both: dropped
     await review(bob, dupe, 2) // moved
@@ -359,7 +401,9 @@ describe('moderation', () => {
 
   it('admins can hide reviews', async () => {
     const id = await save(alice)
-    await db.as(bob, (tx) => tx.query(`insert into reviews (location_id, overall, cleanliness, comment) values ($1, 1, 1, 'rude')`, [id]))
+    await db.as(bob, (tx) =>
+      tx.query(`insert into reviews (location_id, overall, cleanliness, comment) values ($1, 1, 1, 'rude')`, [id]),
+    )
     const [{ id: reviewId }] = await db.rpc<{ id: string }>(ANON, 'get_location_reviews', { location_id: id })
     await db.rpc(admin, 'admin_set_review_hidden', { review_id: reviewId, hidden: true })
     expect(await db.rpc(ANON, 'get_location_reviews', { location_id: id })).toHaveLength(0)

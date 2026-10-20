@@ -36,7 +36,10 @@ async function main() {
     for (let attempt = 0, wait = 15; ; attempt++, wait *= 2) {
       const res = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'RestSpot-capstone-importer/0.1' },
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': 'RestSpot-capstone-importer/0.1',
+        },
         body: new URLSearchParams({ data: query }),
       })
       if (res.ok) return ((await res.json()) as { elements: OsmElement[] }).elements

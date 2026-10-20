@@ -1,25 +1,10 @@
 import { useMemo, useState } from 'react'
-import { Outlet, useNavigate, useOutletContext } from 'react-router'
+import { Outlet, useNavigate } from 'react-router'
 import type { Coordinates, RestroomResult } from '@restspot/shared'
 import { useLiveRestroomUpdates } from '../api/hooks.ts'
 import { RestroomMap, type MapPicker } from '../map/RestroomMap.tsx'
-import { useSearchState } from '../search/SearchContext.tsx'
-
-export interface MapControls {
-  /** Pins to show on the map. */
-  showResults(results: RestroomResult[]): void
-  select(id: string | null): void
-  focusOn(center: Coordinates, zoom?: number): void
-  /** Put the map in "place a pin" mode (add/edit), or null to leave it. */
-  setPicker(picker: MapPicker | null): void
-  /** Where the user last panned the map to, if they moved it themselves. */
-  movedCenter: Coordinates | null
-  clearMovedCenter(): void
-}
-
-export function useMapControls(): MapControls {
-  return useOutletContext<MapControls>()
-}
+import { useSearchState } from '../search/useSearchState.ts'
+import type { MapControls } from './useMapControls.ts'
 
 /** Two-pane layout: page content in a side panel, persistent map beside it. */
 export function MapLayout() {

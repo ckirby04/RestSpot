@@ -40,7 +40,9 @@ test.describe('administration', () => {
     await expect(row).toContainText('Testing suspensions')
 
     // Admins can't suspend themselves.
-    await expect(page.locator('.card').filter({ hasText: DEMO_ADMIN.email }).getByRole('button', { name: 'Suspend' })).toHaveCount(0)
+    await expect(
+      page.locator('.card').filter({ hasText: DEMO_ADMIN.email }).getByRole('button', { name: 'Suspend' }),
+    ).toHaveCount(0)
 
     // Each browser context has its own local database, so check as the user in this one.
     await page.getByRole('link', { name: 'Account' }).click()

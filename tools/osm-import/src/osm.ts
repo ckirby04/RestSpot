@@ -81,11 +81,7 @@ export function toListing(el: OsmElement): ImportedListing | null {
   if (yes(tags.family) || yes(tags['toilets:family'])) room('all_gender', 'family')
 
   const baseName = tags.name ?? tags.brand
-  const name = isToiletsFeature
-    ? (tags.name ?? 'Public restroom')
-    : baseName
-      ? baseName
-      : null
+  const name = isToiletsFeature ? (tags.name ?? 'Public restroom') : baseName ? baseName : null
   if (!name) return null
 
   const notes = [tags.description, tags['toilets:description'], tags.note]
@@ -241,7 +237,14 @@ export function toLikelyListing(el: OsmElement): ImportedListing | null {
   } else if (tags.shop === 'mall') {
     accessType = 'public'
     label = tags.name
-  } else if (tags.amenity === 'fuel' || ((tags.amenity === 'fast_food' || tags.amenity === 'cafe' || tags.shop === 'supermarket' || tags.shop === 'department_store') && isLikelyChain(tags))) {
+  } else if (
+    tags.amenity === 'fuel' ||
+    ((tags.amenity === 'fast_food' ||
+      tags.amenity === 'cafe' ||
+      tags.shop === 'supermarket' ||
+      tags.shop === 'department_store') &&
+      isLikelyChain(tags))
+  ) {
     accessType = 'customers_only'
     label = tags.brand ?? tags.name
   } else {

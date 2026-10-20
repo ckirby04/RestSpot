@@ -5,7 +5,7 @@ import './index.css'
 import App from './App.tsx'
 import { ApiProvider } from './api/ApiProvider.tsx'
 import { AuthProvider } from './auth/AuthProvider.tsx'
-import { SearchProvider } from './search/SearchContext.tsx'
+import { SearchProvider } from './search/SearchProvider.tsx'
 
 const queryClient = new QueryClient({
   defaultOptions: {

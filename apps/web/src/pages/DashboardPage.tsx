@@ -10,10 +10,12 @@ import {
   type AdminUser,
   type ReportStatus,
 } from '@restspot/shared'
-import { useApi } from '../api/ApiProvider.tsx'
+import { useApi } from '../api/useApi.ts'
 import { useContributions, useFavorites, useInvalidateRestroom } from '../api/hooks.ts'
-import { useAuth } from '../auth/AuthProvider.tsx'
-import { ErrorText, formatDate, formatRelative, OpenStatus, RestroomFeatures, Spinner, Stars } from '../components/ui.tsx'
+import { useAuth } from '../auth/useAuth.ts'
+import { ErrorText, OpenStatus, RestroomFeatures, Spinner, Stars } from '../components/ui.tsx'
+import { formatDate, formatRelative } from '../lib/format.ts'
+import { useNow } from '../lib/useNow.ts'
 
 export function DashboardPage() {
   const { session, profile, profileLoading, isAdmin, isSuspended } = useAuth()
@@ -200,8 +202,8 @@ function AccountTab() {
       <section aria-labelledby="delete-h" className="stack danger-zone">
         <h2 id="delete-h">Delete account</h2>
         <p>
-          This permanently deletes your account, saved restrooms, and reports. Your reviews stay up but become anonymous.
-          Restrooms you added stay on the map.
+          This permanently deletes your account, saved restrooms, and reports. Your reviews stay up but become
+          anonymous. Restrooms you added stay on the map.
         </p>
         <label className="field">
           Type DELETE to confirm
@@ -242,7 +244,10 @@ function ReportsTab() {
         <h2 id="reports-h">Reports</h2>
         <label className="inline-field">
           Show{' '}
-          <select value={status ?? 'all'} onChange={(e) => setStatus(e.target.value === 'all' ? null : (e.target.value as ReportStatus))}>
+          <select
+            value={status ?? 'all'}
+            onChange={(e) => setStatus(e.target.value === 'all' ? null : (e.target.value as ReportStatus))}
+          >
             {REPORT_STATUSES.map((s) => (
               <option key={s} value={s}>
                 {REPORT_STATUS_LABELS[s]}
@@ -354,7 +359,8 @@ function UserRow({ user, isSelf }: { user: AdminUser; isSelf: boolean }) {
   const queryClient = useQueryClient()
   const [days, setDays] = useState(7)
   const [reason, setReason] = useState('')
-  const suspended = Boolean(user.suspendedUntil && new Date(user.suspendedUntil) > new Date())
+  const now = useNow()
+  const suspended = Boolean(user.suspendedUntil && new Date(user.suspendedUntil) > now)
   const update = useMutation({
     mutationFn: (until: string | null) => api.admin.setSuspension(user.id, until, reason || null),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'users'] }),

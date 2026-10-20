@@ -43,7 +43,10 @@ test.describe('contributing (signed in)', () => {
     await expect(mine).toContainText('Clean family room, a bit busy.')
 
     await mine.getByRole('button', { name: 'Edit' }).click()
-    await page.locator('.review-form').getByLabel(/Comment/).fill('Updated: much quieter on weekdays.')
+    await page
+      .locator('.review-form')
+      .getByLabel(/Comment/)
+      .fill('Updated: much quieter on weekdays.')
     await page.locator('.review-form').getByRole('button', { name: 'Update review' }).click()
     await expect(reviews).toContainText('Updated: much quieter on weekdays.')
 
@@ -77,7 +80,10 @@ test.describe('contributing (signed in)', () => {
 
   test('adds a restroom, then warns about duplicates nearby', async ({ page }) => {
     await fillNewRestroom(page, 'Old Main')
-    await page.getByRole('group', { name: /Who can use it/ }).getByLabel('Public').check({ force: true })
+    await page
+      .getByRole('group', { name: /Who can use it/ })
+      .getByLabel('Public')
+      .check({ force: true })
     await page.getByRole('group', { name: 'Cost' }).getByLabel('Free').check({ force: true })
     await page.getByRole('button', { name: '+ Men’s' }).click()
     await page.getByRole('button', { name: '+ Women’s' }).click()

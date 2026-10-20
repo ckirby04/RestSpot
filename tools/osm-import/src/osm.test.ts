@@ -33,7 +33,16 @@ describe('toListing', () => {
       id: 1,
       lat: 36.06,
       lon: -94.17,
-      tags: { amenity: 'toilets', name: 'Park Restrooms', male: 'yes', female: 'yes', wheelchair: 'yes', fee: 'no', changing_table: 'yes', opening_hours: '24/7' },
+      tags: {
+        amenity: 'toilets',
+        name: 'Park Restrooms',
+        male: 'yes',
+        female: 'yes',
+        wheelchair: 'yes',
+        fee: 'no',
+        changing_table: 'yes',
+        opening_hours: '24/7',
+      },
     })!
     expect(l.sourceRef).toBe('osm:node/1')
     expect(l.accessType).toBe('public')
@@ -56,15 +65,26 @@ describe('toListing', () => {
       type: 'way',
       id: 4,
       center: { lat: 1, lon: 2 },
-      tags: { amenity: 'fuel', brand: 'Shell', toilets: 'yes', 'toilets:wheelchair': 'no', 'toilets:unisex': 'yes', 'toilets:access': 'customers' },
+      tags: {
+        amenity: 'fuel',
+        brand: 'Shell',
+        toilets: 'yes',
+        'toilets:wheelchair': 'no',
+        'toilets:unisex': 'yes',
+        'toilets:access': 'customers',
+      },
     })!
     expect(l.name).toBe('Shell')
     expect(l.accessType).toBe('customers_only')
-    expect(l.rooms).toEqual([{ designation: 'all_gender', layout: 'single_user', changing_table: 'unknown', ada_accessible: 'no' }])
+    expect(l.rooms).toEqual([
+      { designation: 'all_gender', layout: 'single_user', changing_table: 'unknown', ada_accessible: 'no' },
+    ])
   })
 
   it('skips private restrooms and unnamed POIs', () => {
-    expect(toListing({ type: 'node', id: 5, lat: 1, lon: 2, tags: { amenity: 'toilets', access: 'private' } })).toBeNull()
+    expect(
+      toListing({ type: 'node', id: 5, lat: 1, lon: 2, tags: { amenity: 'toilets', access: 'private' } }),
+    ).toBeNull()
     expect(toListing({ type: 'node', id: 6, lat: 1, lon: 2, tags: { shop: 'convenience', toilets: 'yes' } })).toBeNull()
   })
 })
@@ -73,22 +93,52 @@ describe('toLikelyListing', () => {
   it('imports rest areas and libraries as public, chains and fuel as customers only', () => {
     const rest = toLikelyListing({ type: 'node', id: 10, lat: 1, lon: 2, tags: { highway: 'rest_area' } })!
     expect(rest).toMatchObject({ name: 'Rest area', accessType: 'public', fee: 'free', rooms: [] })
-    const lib = toLikelyListing({ type: 'way', id: 11, center: { lat: 1, lon: 2 }, tags: { amenity: 'library', name: 'City Library' } })!
+    const lib = toLikelyListing({
+      type: 'way',
+      id: 11,
+      center: { lat: 1, lon: 2 },
+      tags: { amenity: 'library', name: 'City Library' },
+    })!
     expect(lib.accessType).toBe('public')
     const mcd = toLikelyListing({
       type: 'node',
       id: 12,
       lat: 1,
       lon: 2,
-      tags: { amenity: 'fast_food', brand: "McDonald's", name: "McDonald's", 'addr:housenumber': '1', 'addr:street': 'Main St', opening_hours: '24/7' },
+      tags: {
+        amenity: 'fast_food',
+        brand: "McDonald's",
+        name: "McDonald's",
+        'addr:housenumber': '1',
+        'addr:street': 'Main St',
+        opening_hours: '24/7',
+      },
     })!
     expect(mcd).toMatchObject({ name: "McDonald's — 1 Main St", accessType: 'customers_only' })
     expect(mcd.hours[0]).toEqual({ kind: 'all_day' })
   })
 
   it('skips unknown restaurants, private libraries, and places already tagged with toilets', () => {
-    expect(toLikelyListing({ type: 'node', id: 13, lat: 1, lon: 2, tags: { amenity: 'fast_food', name: 'Joe’s Grill' } })).toBeNull()
-    expect(toLikelyListing({ type: 'node', id: 14, lat: 1, lon: 2, tags: { amenity: 'library', access: 'private', name: 'X' } })).toBeNull()
-    expect(toLikelyListing({ type: 'node', id: 15, lat: 1, lon: 2, tags: { amenity: 'fuel', brand: 'Shell', toilets: 'no' } })).toBeNull()
+    expect(
+      toLikelyListing({ type: 'node', id: 13, lat: 1, lon: 2, tags: { amenity: 'fast_food', name: 'Joe’s Grill' } }),
+    ).toBeNull()
+    expect(
+      toLikelyListing({
+        type: 'node',
+        id: 14,
+        lat: 1,
+        lon: 2,
+        tags: { amenity: 'library', access: 'private', name: 'X' },
+      }),
+    ).toBeNull()
+    expect(
+      toLikelyListing({
+        type: 'node',
+        id: 15,
+        lat: 1,
+        lon: 2,
+        tags: { amenity: 'fuel', brand: 'Shell', toilets: 'no' },
+      }),
+    ).toBeNull()
   })
 })

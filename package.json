@@ -13,6 +13,15 @@
     "lint": "npm run lint -w @restspot/web",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "test:e2e": "npm run test:e2e -w @restspot/web"
-  }
+    "test:e2e": "npm run test:e2e -w @restspot/web",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "^3.9.10"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "description": "RestSpot: a crowdsourced restroom finder (University of Arkansas CSCE capstone)."
 }

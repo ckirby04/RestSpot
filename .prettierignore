@@ -1,0 +1,7 @@
+node_modules
+dist
+package-lock.json
+supabase/seed/*.sql
+apps/web/test-results
+apps/web/playwright-report
+docs/*.pdf

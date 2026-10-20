@@ -75,9 +75,8 @@ export async function createLocalApi(): Promise<RestSpotApi & { resetDatabase():
   const dataDir = `idb://restspot-dev-${version}`
 
   const pg = await PGlite.create({ dataDir, extensions: { postgis, pg_trgm } })
-  const initialized = (
-    await pg.query<{ ok: boolean }>(`select to_regclass('public.locations') is not null as ok`)
-  ).rows[0].ok
+  const initialized = (await pg.query<{ ok: boolean }>(`select to_regclass('public.locations') is not null as ok`))
+    .rows[0].ok
   if (!initialized) {
     await pg.exec(SUPABASE_STUB)
     await pg.exec(migrationSql)
@@ -180,7 +179,9 @@ export async function createLocalApi(): Promise<RestSpotApi & { resetDatabase():
         const v = args[n]
         return v !== null && typeof v === 'object' ? JSON.stringify(v) : v
       })
-      const rows = await asCaller(async (tx) => (await tx.query<any>(`select * from public.${fn}(${params})`, values)).rows)
+      const rows = await asCaller(
+        async (tx) => (await tx.query<any>(`select * from public.${fn}(${params})`, values)).rows,
+      )
       if (!READ_ONLY_RPCS.test(fn)) await persist()
       if (LISTING_RPCS.test(fn)) notify('locations')
       switch (kind) {
@@ -223,7 +224,8 @@ export async function createLocalApi(): Promise<RestSpotApi & { resetDatabase():
     async selectOne(table, match) {
       const where = whereClause(match)
       const rows = await asCaller(
-        async (tx) => (await tx.query<any>(`select * from ${ident(table)} where ${where.sql} limit 1`, where.values)).rows,
+        async (tx) =>
+          (await tx.query<any>(`select * from ${ident(table)} where ${where.sql} limit 1`, where.values)).rows,
       )
       return rows[0] ?? null
     },
@@ -283,7 +285,10 @@ export async function createLocalApi(): Promise<RestSpotApi & { resetDatabase():
     },
     async updatePassword(password) {
       if (!session) throw new ApiError('Not signed in')
-      await pg.query('update auth.users set dev_password_sha256 = $1 where id = $2', [await sha256(password), session.userId])
+      await pg.query('update auth.users set dev_password_sha256 = $1 where id = $2', [
+        await sha256(password),
+        session.userId,
+      ])
       await persist()
     },
   }

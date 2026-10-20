@@ -22,12 +22,13 @@ import {
   type TriState,
   type WeeklyHours,
 } from '@restspot/shared'
-import { useApi } from '../api/ApiProvider.tsx'
+import { useApi } from '../api/useApi.ts'
 import { useInvalidateRestroom, useRestroom, useSearch } from '../api/hooks.ts'
-import { useAuth } from '../auth/AuthProvider.tsx'
-import { ErrorText, Segmented, Spinner, TRI_STATE_OPTIONS } from '../components/ui.tsx'
-import { useMapControls } from '../layout/MapLayout.tsx'
-import { useSearchState } from '../search/SearchContext.tsx'
+import { useAuth } from '../auth/useAuth.ts'
+import { TRI_STATE_OPTIONS } from '../components/options.ts'
+import { ErrorText, Segmented, Spinner } from '../components/ui.tsx'
+import { useMapControls } from '../layout/useMapControls.ts'
+import { useSearchState } from '../search/useSearchState.ts'
 
 const UNKNOWN_WEEK: WeeklyHours = Array(7).fill({ kind: 'unknown' }) as WeeklyHours
 
@@ -352,11 +353,20 @@ function RoomsEditor({ rooms, onChange }: { rooms: Room[]; onChange(rooms: Room[
       <p className="hint">Add each restroom at this place. Most places have a men’s and a women’s room.</p>
       <div className="row wrap">
         {ROOM_DESIGNATIONS.map((d) => (
-          <button key={d} type="button" className="button button-secondary" onClick={() => onChange([...rooms, newRoom(d, false, rooms[0])])}>
+          <button
+            key={d}
+            type="button"
+            className="button button-secondary"
+            onClick={() => onChange([...rooms, newRoom(d, false, rooms[0])])}
+          >
             + {DESIGNATION_LABELS[d]}
           </button>
         ))}
-        <button type="button" className="button button-secondary" onClick={() => onChange([...rooms, newRoom('all_gender', true, rooms[0])])}>
+        <button
+          type="button"
+          className="button button-secondary"
+          onClick={() => onChange([...rooms, newRoom('all_gender', true, rooms[0])])}
+        >
           + Family room
         </button>
       </div>

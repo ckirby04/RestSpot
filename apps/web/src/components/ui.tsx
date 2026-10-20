@@ -1,12 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react'
-import {
-  DESIGNATION_LABELS,
-  LAYOUT_LABELS,
-  TRI_STATE_LABELS,
-  type Restroom,
-  type Room,
-  type TriState,
-} from '@restspot/shared'
+import { DESIGNATION_LABELS, LAYOUT_LABELS, type Restroom, type Room, type TriState } from '@restspot/shared'
 
 export function OpenStatus({ isOpen }: { isOpen: boolean | null }) {
   if (isOpen === true) return <span className="status status-open">Open now</span>
@@ -115,7 +108,13 @@ export function Segmented<T extends string>({
       <div className="segmented-options">
         {options.map((o) => (
           <label key={o.value} className={value === o.value ? 'on' : ''}>
-            <input type="radio" name={name} value={o.value} checked={value === o.value} onChange={() => onChange(o.value)} />
+            <input
+              type="radio"
+              name={name}
+              value={o.value}
+              checked={value === o.value}
+              onChange={() => onChange(o.value)}
+            />
             {o.label}
           </label>
         ))}
@@ -123,8 +122,6 @@ export function Segmented<T extends string>({
     </fieldset>
   )
 }
-
-export const TRI_STATE_OPTIONS = (['yes', 'no', 'unknown'] as const).map((v) => ({ value: v, label: TRI_STATE_LABELS[v] }))
 
 export function ErrorText({ error }: { error: unknown }) {
   if (!error) return null
@@ -175,16 +172,4 @@ export function Spinner({ label = 'Loading' }: { label?: string }) {
       {label}…
     </p>
   )
-}
-
-export function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
-}
-
-export function formatRelative(iso: string): string {
-  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000)
-  if (days < 1) return 'today'
-  if (days === 1) return 'yesterday'
-  if (days < 30) return `${days} days ago`
-  return formatDate(iso)
 }

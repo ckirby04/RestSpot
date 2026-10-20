@@ -1,7 +1,5 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import type { RestSpotApi } from '@restspot/shared'
-
-export type AppApi = RestSpotApi & { resetDatabase?: () => Promise<void> }
+import { useEffect, useState, type ReactNode } from 'react'
+import { ApiContext, type AppApi } from './useApi.ts'
 
 async function createApi(): Promise<AppApi> {
   const url = import.meta.env.VITE_SUPABASE_URL
@@ -26,8 +24,6 @@ function getApi(): Promise<AppApi> {
   apiPromise ??= createApi()
   return apiPromise
 }
-
-const ApiContext = createContext<AppApi | null>(null)
 
 export function ApiProvider({ children }: { children: ReactNode }) {
   const [api, setApi] = useState<AppApi | null>(null)
@@ -61,10 +57,4 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     )
   }
   return <ApiContext.Provider value={api}>{children}</ApiContext.Provider>
-}
-
-export function useApi(): AppApi {
-  const api = useContext(ApiContext)
-  if (!api) throw new Error('useApi must be used inside ApiProvider')
-  return api
 }

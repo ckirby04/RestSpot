@@ -1,8 +1,8 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router'
 import { LIMITS, signUpSchema, type OAuthProvider } from '@restspot/shared'
-import { useApi } from '../api/ApiProvider.tsx'
-import { useAuth } from '../auth/AuthProvider.tsx'
+import { useApi } from '../api/useApi.ts'
+import { useAuth } from '../auth/useAuth.ts'
 import { ErrorText } from '../components/ui.tsx'
 
 /** Where to go after signing in: back to the page that asked, or the map. */
@@ -136,7 +136,11 @@ export function SignUpPage() {
     setError(null)
     const parsed = signUpSchema.safeParse({ email: email.trim(), password })
     if (!parsed.success) {
-      setError(new Error(parsed.error.issues[0].path[0] === 'email' ? 'Enter a valid email address' : parsed.error.issues[0].message))
+      setError(
+        new Error(
+          parsed.error.issues[0].path[0] === 'email' ? 'Enter a valid email address' : parsed.error.issues[0].message,
+        ),
+      )
       return
     }
     if (!displayName.trim()) {
@@ -289,7 +293,13 @@ export function ResetPasswordPage() {
         >
           <label className="field">
             Email
-            <input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <input
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
           </label>
           <ErrorText error={error} />
           <button type="submit" className="button" disabled={busy}>
