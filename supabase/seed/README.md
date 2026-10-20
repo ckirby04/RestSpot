@@ -10,10 +10,12 @@ SQL files that pre-populate RestSpot before crowdsourcing begins. They're genera
 ## Loading into Supabase
 
 1. Apply the migrations first (`supabase/migrations`).
-2. Open **Supabase → SQL Editor**, paste the file's contents, and run it.
+2. Open **Supabase → SQL Editor → New query**, paste the file's contents, and run it. It's a single
+   SQL statement, so the editor just reports _"Success. No rows returned"_.
+3. Check: `select source, count(*) from public.locations group by source;`
 
-The script is idempotent: running it again refreshes untouched OSM listings and adds new ones, but
-never overwrites a listing a user has verified or edited.
+The script is idempotent: running it again refreshes untouched imported listings and adds new ones,
+but never overwrites a listing a user has verified or edited.
 
 ## What gets imported
 

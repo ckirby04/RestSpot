@@ -1,90 +1,128 @@
-# Supabase setup
+# Supabase and Vercel setup
 
-Everything here fits in Supabase's free plan. Free projects pause after about a week without
-activity; un-pause them from the dashboard.
+How the production backend and hosting are set up, and how to recreate them. Everything here fits
+in the free plans.
 
-## 1. Create the project
+**Our project:** Supabase `RestSpot` (ref `maebnbpimejhqdjapmok`, West US) and Vercel project
+`restspot` serving https://restspot.vercel.app. Ask Clark to invite you (see
+[STATUS.md](STATUS.md#accounts-and-access)).
 
-1. Sign in at [supabase.com](https://supabase.com) and create a new project (pick a US region near
-   Arkansas, e.g. East US).
+> Free Supabase projects pause after about a week with no activity. If the site can't load data,
+> check the Supabase dashboard and click **Restore project**.
+
+## 1. Create the Supabase project
+
+_Only needed for a new environment; ours exists._
+
+1. Sign in at [supabase.com](https://supabase.com) and create a project (a US region).
 2. Save the database password in a password manager. The app never needs it.
 
-## 2. Apply the database schema
+## 2. Apply the schema
 
-**SQL Editor (simplest):** open _SQL Editor → New query_, paste the contents of
-`supabase/migrations/20261019000000_init.sql`, and run it. This enables PostGIS and `pg_trgm`,
-creates the tables, row-level security policies, and functions.
+Open **SQL Editor → New query**, paste `supabase/migrations/20261019000000_init.sql`, and run it.
+It enables PostGIS and `pg_trgm` and creates the tables, row-level security policies, and functions.
 
-**Or with the Supabase CLI** (no install needed):
+**Later migrations:** run each new file in `supabase/migrations/` the same way, in filename order,
+once its pull request merges. Never re-run or edit one that's already applied.
 
-```bash
-npx supabase login
-npx supabase link --project-ref <your-project-ref>
-npx supabase db push
+The Supabase CLI also works (`npx supabase login`, `npx supabase link --project-ref <ref>`,
+`npx supabase db push`), but it needs the database password.
+
+## 3. Load seed data
+
+Paste `supabase/seed/osm-nwa.sql` into a new SQL Editor query and run it. The editor will just say
+_"Success. No rows returned"_. To check:
+
+```sql
+select source, count(*) from public.locations group by source;
 ```
 
-## 3. Load seed data (optional)
+Expect about 117 `osm` and 276 `poi_inferred`. It's safe to run again. See
+[supabase/seed/README.md](../supabase/seed/README.md).
 
-Paste `supabase/seed/osm-nwa.sql` into the SQL Editor and run it. See
-[`supabase/seed/README.md`](../supabase/seed/README.md).
+## 4. Authentication
 
-## 4. Configure authentication
+**Authentication → URL Configuration**
 
-_Authentication → URL Configuration_
+- **Site URL:** `https://restspot.vercel.app`
+- **Redirect URLs:** `https://restspot.vercel.app/**` and `http://localhost:5173/**`
 
-- **Site URL:** your deployed URL (or `http://localhost:5173` while developing)
-- **Redirect URLs:** add `http://localhost:5173/**` and your deployed URL with `/**`
+**Authentication → Sign In / Providers**
 
-_Authentication → Providers → Email_: leave enabled. Keep **Confirm email** on for production.
-Minimum password length: 8 (matches the proposal).
+- **Email:** enabled; minimum password length **8** (matches the proposal).
+- **Confirm email:** Supabase's built-in email service only sends to members of the Supabase
+  organization, and only a few per hour. Keep **Confirm email off** until custom SMTP is set up
+  (below), or other people won't be able to finish signing up.
+
+### Custom email (before a public launch)
+
+Sign up for a free SMTP provider (for example [Resend](https://resend.com), 3,000 emails/month),
+then fill in **Authentication → Emails → SMTP Settings**. After that, turn **Confirm email** back on
+and test sign-up and password reset.
 
 ### Google sign-in (free)
 
-1. In [Google Cloud Console](https://console.cloud.google.com/), create a project →
-   _APIs & Services → OAuth consent screen_ (External, add your app name and email).
-2. _Credentials → Create credentials → OAuth client ID → Web application_.
-   - Authorized JavaScript origins: `http://localhost:5173` and your deployed URL
+1. In [Google Cloud Console](https://console.cloud.google.com/), create a project, then
+   **APIs & Services → OAuth consent screen** (External; app name, support email).
+2. **Credentials → Create credentials → OAuth client ID → Web application**:
+   - Authorized JavaScript origins: `https://restspot.vercel.app` and `http://localhost:5173`
    - Authorized redirect URI: the callback URL shown in Supabase under
-     _Authentication → Providers → Google_ (looks like `https://<ref>.supabase.co/auth/v1/callback`)
+     **Authentication → Sign In / Providers → Google** (`https://<ref>.supabase.co/auth/v1/callback`)
 3. Paste the client ID and secret into Supabase's Google provider and enable it.
 
-### Apple sign-in (requires a paid Apple Developer account)
+The "Continue with Google" button already exists in the app.
 
-Apple sign-in needs an Apple Developer Program membership ($99/yr), which is also required to
-publish the iOS app. Once the team has one, configure the Apple provider in Supabase following its
-guide, then set `VITE_ENABLE_APPLE_SIGNIN=true`. Until then the Apple button is hidden.
+### Apple sign-in (needs a $99/yr Apple Developer account)
 
-## 5. Connect the website
+The same account is required to publish the iOS app. Once the team has one, configure the Apple
+provider in Supabase, then set `VITE_ENABLE_APPLE_SIGNIN=true` in Vercel and redeploy.
 
-_Project Settings → API_: copy the **Project URL** and the **anon / publishable key** into
-`apps/web/.env.local`:
-
-```bash
-VITE_SUPABASE_URL=https://<ref>.supabase.co
-VITE_SUPABASE_ANON_KEY=<anon key>
-```
-
-The anon key is meant to be public; row-level security protects the data.
-**Never put the `service_role` key in the app or commit it.**
-
-Restart `npm run dev`. The yellow "Local demo database" banner disappears when the app is using
-Supabase.
-
-## 6. Make yourself an admin
+## 5. Admins
 
 Sign up in the app, then run in the SQL Editor:
 
 ```sql
 update public.profiles set role = 'admin'
-where id = (select id from auth.users where email = 'you@example.com');
+where id = (select id from auth.users where email = 'someone@example.com');
+
+-- Check (the update itself reports "No rows returned" even when it works):
+select u.email, p.display_name, p.role from auth.users u join public.profiles p on p.id = u.id;
 ```
 
-Admins see the Reports and Users tabs in the dashboard and moderation tools on listings.
+Admins see **Reports** and **Users** tabs in the dashboard and moderation tools on each listing.
 
-## 7. Realtime (optional)
+## 6. Keys
 
-The migration adds `locations` to the `supabase_realtime` publication, so new listings and edits
-appear for other users within seconds. If you created the project's publication later, re-run:
+**Project Settings → API** has the **Project URL** and the **anon / publishable key**.
+
+- The anon key is **public by design**; it ships in the website. Row-level security protects the data.
+- **Never** use the `service_role` key or the database password in the app, in Vercel's `VITE_`
+  variables, in chat, or in Git.
+
+For local development against Supabase, put the two values in `apps/web/.env.local` (gitignored):
+
+```bash
+VITE_SUPABASE_URL=https://maebnbpimejhqdjapmok.supabase.co
+VITE_SUPABASE_ANON_KEY=<anon key>
+```
+
+Remember that this is the production database.
+
+## 7. Vercel
+
+The project imports this GitHub repo with **Root Directory `./`**. Build settings come from the root
+`vercel.json` (`npm ci`, `npm run build`, output `apps/web/dist`, SPA rewrites).
+
+- **Production** deploys every push to `main`. Pull requests get preview deployments.
+- **Environment variables:** **Settings → Environments → Production** (and Preview): add
+  `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. Vite bakes them in at build time, so after
+  changing them, **Deployments → ⋯ → Redeploy**.
+- Don't create custom environments; that's a paid feature and not needed.
+
+## 8. Realtime
+
+The migration adds `locations` to the `supabase_realtime` publication so new listings and edits
+show up for other users within seconds. If that ever needs re-doing:
 
 ```sql
 alter publication supabase_realtime add table public.locations;

@@ -8,28 +8,28 @@ Status key: **Decided** · **Proposed** (awaiting team sign-off) · **Open**
 
 ## Process
 
-| Topic          | Decision                                                                          | Status  |
-| -------------- | --------------------------------------------------------------------------------- | ------- |
-| Platform order | Website first, port to iOS/Android later                                          | Decided |
-| Branching      | Single personal branch (`clark/web`) for web development; no feature branches yet | Decided |
-| Timeline       | No fixed milestones yet; tackle work as it comes                                  | Decided |
-| Budget         | $0 — free tiers only wherever possible                                            | Decided |
+| Topic          | Decision                                                                                                                                                                                       | Status  |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| Platform order | Website first, port to iOS/Android later                                                                                                                                                       | Decided |
+| Branching      | `main` is production (auto-deploys to Vercel). Work on feature branches and merge through pull requests with passing CI. (Before the team handoff, Clark built the site alone on `clark/web`.) | Decided |
+| Timeline       | No fixed milestones yet; tackle work as it comes                                                                                                                                               | Decided |
+| Budget         | $0 — free tiers only wherever possible                                                                                                                                                         | Decided |
 
 ## Stack
 
-| Layer                   | Choice                                                             | Notes                                                                                  | Status      |
-| ----------------------- | ------------------------------------------------------------------ | -------------------------------------------------------------------------------------- | ----------- |
-| Web frontend            | React + TypeScript (Vite)                                          | Shared `packages/` for types, validation, API client so the Expo app can reuse them    | Decided     |
-| Mobile (later)          | React Native via Expo                                              | Reuses shared packages                                                                 | Decided     |
-| Backend                 | Supabase (Postgres + PostGIS, Auth, Row-Level Security, Realtime)  | Free tier: 500 MB DB; project pauses after ~1 week of inactivity                       | Decided     |
-| Map rendering           | MapLibre GL JS + OpenFreeMap tiles                                 | Free, no API key, no billing account                                                   | Implemented |
-| Geocoding               | Nominatim (OSM)                                                    | Free; ~1 req/s and no autocomplete per its usage policy, so search runs on submit only | Implemented |
-| Directions              | Deep link to Google/Apple Maps                                     | Per proposal; no API cost                                                              | Decided     |
-| Web hosting             | Vercel, Netlify, or Cloudflare Pages (free tier)                   | Static SPA; rewrites configured for each                                               | Proposed    |
-| Data fetching / routing | TanStack Query, React Router                                       | Query cache refetches on realtime changes                                              | Implemented |
-| Local development       | In-browser Postgres (PGlite + PostGIS) running the real migrations | Develop and demo with no Supabase project; never shipped in production builds          | Implemented |
-| Testing                 | Vitest; database tests run the real migrations in PGlite           | 10k-restroom search runs in <35 ms (target 500 ms)                                     | Implemented |
-| CI                      | GitHub Actions: typecheck, lint, test, build                       | Free for public repos                                                                  | Implemented |
+| Layer                   | Choice                                                                                                               | Notes                                                                                  | Status      |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ----------- |
+| Web frontend            | React + TypeScript (Vite)                                                                                            | Shared `packages/` for types, validation, API client so the Expo app can reuse them    | Decided     |
+| Mobile (later)          | React Native via Expo                                                                                                | Reuses shared packages                                                                 | Decided     |
+| Backend                 | Supabase (Postgres + PostGIS, Auth, Row-Level Security, Realtime)                                                    | Free tier: 500 MB DB; project pauses after ~1 week of inactivity                       | Decided     |
+| Map rendering           | MapLibre GL JS + OpenFreeMap tiles                                                                                   | Free, no API key, no billing account                                                   | Implemented |
+| Geocoding               | Nominatim (OSM)                                                                                                      | Free; ~1 req/s and no autocomplete per its usage policy, so search runs on submit only | Implemented |
+| Directions              | Deep link to Google/Apple Maps                                                                                       | Per proposal; no API cost                                                              | Decided     |
+| Web hosting             | Vercel (free Hobby plan), deploying `main`; PRs get preview links                                                    | Static SPA; config in root `vercel.json`                                               | Decided     |
+| Data fetching / routing | TanStack Query, React Router                                                                                         | Query cache refetches on realtime changes                                              | Implemented |
+| Local development       | In-browser Postgres (PGlite + PostGIS) running the real migrations                                                   | Develop and demo with no Supabase project; never shipped in production builds          | Implemented |
+| Testing                 | Vitest (unit + database tests on the real migrations in PGlite) and Playwright with axe (end-to-end + accessibility) | 10k-restroom search runs in <35 ms (target 500 ms)                                     | Implemented |
+| CI                      | GitHub Actions: format, typecheck, lint, unit/database tests, build, and Playwright browser tests                    | Free for public repos                                                                  | Implemented |
 
 ## Product / data model
 
@@ -97,3 +97,14 @@ Seed the database before crowdsourcing begins, with each record's source and con
 - **Apple Sign-In costs money:** it requires an Apple Developer Program membership
   ($99/yr), and that membership is needed anyway to publish on iOS. Options: build Google + email
   now and add Apple when the team gets a developer account (e.g. through the university).
+- **Team sign-off on the rooms model** (above). It's implemented and working; confirm the team and
+  sponsor are happy with it before the mobile app is built on it.
+- **"Likely restroom" seed data.** Keep showing inferred listings (gas stations, chains) as
+  unverified, or hide them until confirmed? Currently shown, labeled "not confirmed".
+
+## Changelog
+
+- **2026-10-19:** Stack, data model, and free-tier services chosen; website built on `clark/web`.
+- **2026-10-20:** Deployed to Vercel + Supabase; seed loaded as a single SQL statement (the Supabase
+  SQL editor doesn't keep session state between statements). `main` became production and the
+  team moved to feature branches and pull requests. Prettier added.
