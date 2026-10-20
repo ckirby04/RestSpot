@@ -75,4 +75,4 @@ The site is a static single-page app. On Vercel, Netlify, or Cloudflare Pages:
 - Output directory: `apps/web/dist`
 - Environment variables: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
 
-SPA routing is configured in `apps/web/vercel.json` and `apps/web/public/_redirects`.
+Vercel settings (build, output, SPA routing) live in the root `vercel.json`, so import the repo with the root directory left as `./`. Netlify/Cloudflare use `apps/web/public/_redirects`.
