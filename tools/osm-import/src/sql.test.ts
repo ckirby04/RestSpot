@@ -20,10 +20,25 @@ const fixtures = [
   })!,
 ]
 
+/**
+ * Run a script the way the Supabase SQL editor can: statement by statement, with no
+ * session state (temp tables, search_path) carried between them.
+ */
+async function runLikeSqlEditor(db: Awaited<ReturnType<typeof createDb>>, sql: string) {
+  const statements = sql
+    .split(/;\s*\n/)
+    .map((s) => s.replace(/^\s*--.*$/gm, '').trim())
+    .filter(Boolean)
+  for (const statement of statements) {
+    await db.pg.exec(`reset all; set search_path = pg_catalog; ${statement};`)
+  }
+  await db.pg.exec('reset all')
+}
+
 it('generated SQL imports listings idempotently and never overwrites user edits', async () => {
   const db = await createDb()
-  await db.pg.exec(toSql(fixtures, 'test'))
-  await db.pg.exec(toSql(fixtures, 'test again'))
+  await runLikeSqlEditor(db, toSql(fixtures, 'test'))
+  await runLikeSqlEditor(db, toSql(fixtures, 'test again'))
 
   const results = await db.rpc<Record<string, any>>(ANON, 'search_restrooms', { near_lat: CAMPUS.lat, near_lng: CAMPUS.lng })
   expect(results.map((r) => [r.name, r.source, r.verified, r.rooms.length]).sort()).toEqual([
@@ -49,7 +64,7 @@ it('generated SQL imports listings idempotently and never overwrites user edits'
       rooms: [{ designation: 'all_gender', layout: 'single_user' }],
     },
   })
-  await db.pg.exec(toSql(fixtures, 'third run'))
+  await runLikeSqlEditor(db, toSql(fixtures, 'third run'))
   const [after] = await db.rpc<{ get_location: any }>(ANON, 'get_location', { location_id: id })
   expect(after.get_location.name).toBe('Campus Restroom (2nd floor)')
   expect(after.get_location.rooms).toHaveLength(1)

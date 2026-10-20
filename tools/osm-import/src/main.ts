@@ -31,7 +31,7 @@ async function main() {
 
   const includeLikely = process.argv.includes('--likely')
 
-  // The public Overpass server rate-limits (429) and times out (504) under load; back off and retry.
+  // The public Overpass server rate-limits (429) and returns 5xx under load; back off and retry.
   async function overpass(query: string): Promise<OsmElement[]> {
     for (let attempt = 0, wait = 15; ; attempt++, wait *= 2) {
       const res = await fetch(endpoint, {
@@ -40,7 +40,7 @@ async function main() {
         body: new URLSearchParams({ data: query }),
       })
       if (res.ok) return ((await res.json()) as { elements: OsmElement[] }).elements
-      if ((res.status === 429 || res.status === 504) && attempt < 4) {
+      if ([429, 502, 503, 504].includes(res.status) && attempt < 4) {
         console.log(`Overpass is busy (${res.status}); retrying in ${wait}s…`)
         await new Promise((r) => setTimeout(r, wait * 1000))
         continue
