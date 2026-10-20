@@ -21,22 +21,20 @@ const fixtures = [
 ]
 
 /**
- * Run a script the way the Supabase SQL editor can: statement by statement, with no
- * session state (temp tables, search_path) carried between them.
+ * Run a script the way the Supabase SQL editor might: as one request, with no
+ * useful search_path. The script must be a single statement so nothing depends
+ * on session state or statement order.
  */
 async function runLikeSqlEditor(db: Awaited<ReturnType<typeof createDb>>, sql: string) {
-  const statements = sql
-    .split(/;\s*\n/)
-    .map((s) => s.replace(/^\s*--.*$/gm, '').trim())
-    .filter(Boolean)
-  for (const statement of statements) {
-    await db.pg.exec(`reset all; set search_path = pg_catalog; ${statement};`)
-  }
-  await db.pg.exec('reset all')
+  const body = sql.replace(/^--.*$/gm, '').trim()
+  expect(body.startsWith('do $seed$') && body.endsWith('$seed$;')).toBe(true)
+  await db.pg.exec(`set search_path = pg_catalog; ${body} reset all;`)
 }
 
 it('generated SQL imports listings idempotently and never overwrites user edits', async () => {
   const db = await createDb()
+  // Leftovers from a failed run of an older script version.
+  await db.pg.exec('create schema osm_staging; create table osm_staging.import (x int);')
   await runLikeSqlEditor(db, toSql(fixtures, 'test'))
   await runLikeSqlEditor(db, toSql(fixtures, 'test again'))
 
